@@ -2,7 +2,6 @@ import json
 import os
 import sys
 import logging
-
 import requests
 
 logger = logging.getLogger("cbcdm")
@@ -26,64 +25,60 @@ class ApiRequest:
         self.api_key = api_key
         self.api_id = api_id
         self.org_key = org_key
-        self.api_auth = None
-        self.api_headers = None
-        self.set_api_header()
-
+        self.api_auth = self.api_key + "/" + self.api_id
+        self.api_headers = {'Content-Type': 'application/json', 'X-Auth-Token': self.api_auth}
+        logger.debug("Header set to " + str(self.api_headers))
         prod_switch = {
             0: "https://api.confer.net",
-            5: "https://api-prod05.conferdeploy.net",
-            6: "https://defense-eu.conferdeploy.net/"
+            5: "https://defense-prod05.conferdeploy.net",
+            6: "https://defense-eu.conferdeploy.net"
         }
 
         self.api_device_url = prod_switch[prod] + "/appservices/v6/orgs/" + self.org_key + "/devices/_search"
+        logger.debug("Prod URL set to " + self.api_device_url)
 
-        self.request_payload = {
-            "criteria": {
-                "status": ["ALL"],
-            }
-        }
-        self.api_response = self.http_request()
+        self.request_payload = "{\n    \"criteria\": {\n        \"status\": [\n            \"ALL\"\n        ]\n    }\n}"
 
-        # TODO: Configure data dump when receiving the right data for the http request
-        # new_device_data = Data(data_file="devices.json")
-        # new_device_data.file_dump(self.get_response())
+        response = requests.request("POST", self.api_device_url, data=self.request_payload, headers=self.api_headers)
 
-        # TODO: Change the counter to reflect all items
-        self.total_results = 5
-
-    def set_api_header(self):
-
-        self.api_auth = self.api_key + "/" + self.api_id
-        self.api_headers = {'Content-Type': 'application/csv', 'X-Auth-Token': self.api_auth}
-
-    def http_request(self):
-
-        # Sends a request to the API with the set API URL and header
-        session = requests.Session()
-        response = session.get(self.api_device_url, data=self.request_payload, headers=self.api_headers)
-
+        logger.debug("HTTP request sent")
         if response:
 
-            logger.debug("API Request set and response received")
-            # TODO: Fix response, its not returning the json data
-            return response.request.body
-
+            logger.debug("HTTP response received")
+            self.api_response = Response(response.json())
+            self.success = True
         else:
 
             logger.error("HTTP Error in API Request, Status Code: " + str(response.status_code))
+            self.success = False
 
-    def get_response(self):
-        return self.api_response
+
+class Response:
+
+    def __init__(self, response_data):
+        self.content = response_data
+        self.total_results = response_data["num_found"]
+        logger.debug("Number of devices found: " + str(self.total_results))
+
+        self.all_devices = []
+        counter = 0
+
+        while counter < self.total_results:
+
+            new_device = Device(self.content, counter)
+            self.all_devices.append(new_device)
+            counter += 1
+
+    def print_devices(self):
+        for x in range(len(self.all_devices)):
+            print(self.all_devices[x].name)
+            print(self.all_devices[x].uninstall_code)
 
     def get_text_response(self):
-        return self.api_response
-
-    def get_total_results(self):
-        return int(self.total_results)
+        return self.content.text
 
 
-class Data:
+class DataHandler:
 
     def __init__(self, data_path="data", data_file="data_file.json"):
 
@@ -108,41 +103,28 @@ class Data:
             with open(self.data_location, "r") as file:
                 return json.loads(file.read())
         else:
-            logger.debug("JSON File not found", level=3)
+            logger.error("File not found", level=3)
 
 
 class Device:
 
-    def __init__(self, device_data, reference):
-        self.name = device_data["results"][reference]["name"]
-        self.status = device_data["results"][reference]["status"]
-        self.device_id = device_data["results"][reference]["deviceId"]
-        self.policy_id = device_data["results"][reference]["policyId"]
+    def __init__(self, device_data, counter_reference):
+        self.name = device_data["results"][counter_reference]["name"]
+        self.status = device_data["results"][counter_reference]["status"]
+        self.device_id = device_data["results"][counter_reference]["id"]
+        if device_data["results"][counter_reference]["uninstall_code"] is None:
+            self.uninstall_code = "Not Found"
+        else:
+            self.uninstall_code = device_data["results"][counter_reference]["uninstall_code"]
 
 
 def main():
     new_request = ApiRequest("BT8AD1M6GK6TLPC6NSJDZ3SH", "K2R11QCZ71", "79ZAMKRN", prod=6)
+    if new_request.success:
+        new_data_handler = DataHandler(data_file="devices.json")
+        new_data_handler.file_dump(new_request.api_response.content)
+        new_request.api_response.print_devices()
 
-    all_devices = []
-    active_devices = []
-
-    counter = 0
-
-    print(new_request.get_response())
-
-# TODO: Consider removing
-""""
-    while counter < new_request.get_total_results():
-
-        new_device = Device(new_request.get_response(), counter)
-        all_devices.append(new_device)
-        if all_devices[counter].status == "REGISTERED":
-            active_devices.append(new_device)
-        counter += 1
-
-    for x in range(len(all_devices)):
-        print(all_devices[x].name)
-"""
 
 if __name__ == "__main__":
     sys.exit(main())
