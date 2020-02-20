@@ -3,6 +3,7 @@ import os
 import sys
 import logging
 import requests
+from PyQt5 import QtWidgets, uic
 
 logger = logging.getLogger("cbcdm")
 logger.setLevel(logging.DEBUG)
@@ -118,12 +119,22 @@ class Device:
             self.uninstall_code = device_data["results"][counter_reference]["uninstall_code"]
 
 
+class Ui(QtWidgets.QWidget):
+    def __init__(self):
+        super(Ui, self).__init__()
+        uic.loadUi("cbcdm.ui", self)
+        self.show()
+
+
 def main():
     new_request = ApiRequest("BT8AD1M6GK6TLPC6NSJDZ3SH", "K2R11QCZ71", "79ZAMKRN", prod=6)
     if new_request.success:
         new_data_handler = DataHandler(data_file="devices.json")
         new_data_handler.file_dump(new_request.api_response.content)
         new_request.api_response.print_devices()
+    app = QtWidgets.QWidget(sys.argv)
+    window = Ui()
+    app.exec_()
 
 
 if __name__ == "__main__":
