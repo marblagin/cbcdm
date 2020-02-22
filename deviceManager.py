@@ -103,9 +103,7 @@ class DataHandler:
 class Auth:
 
     def __init__(self, auth_path="config", auth_file="credentials.ini"):
-        self.auth_file = auth_file
-        self.auth_path = auth_path
-        self.auth_location = self.auth_path + "/" + self.auth_file
+        self.profiles = []
         config = configparser.ConfigParser()
         if not os.path.exists(self.auth_location):
             logger.warning("Credential File not found, creating a new one")
@@ -120,6 +118,16 @@ class Auth:
                 config.write(configfile)
         config.read(self.auth_location)
         logger.debug("Config file now loaded")
+        # Todo Read in the profiles from the config file
+        counter = 1
+        for x in config:
+            self.profiles.append([config[x]])
+            counter += 1
+        logger.debug(str(counter) + " number of profiles found")
+        # Todo assign each value to a profile in profiles array
+        self.auth_file = auth_file
+        self.auth_path = auth_path
+        self.auth_location = self.auth_path + "/" + self.auth_file
         self.api_url = config['default']['url']
         self.api_token = config['default']['token']
         self.org_key = config['default']['org_key']
