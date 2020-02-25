@@ -1,5 +1,6 @@
 import logging
-from api import ApiRequest, Response
+from api import ApiRequest, Response, Auth
+from config import AuthConfig
 from data import DataHandler
 from PyQt5 import uic, QtWidgets, QtCore, QtGui
 from PyQt5.QtWidgets import QTableWidgetItem
@@ -12,7 +13,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setWindowTitle("CBCDM")
         self.resize(930, 640)
 
-        self.request = ApiRequest()
+        self.auth_config = AuthConfig()
+        self.auth = Auth(self.auth_config.config, self.auth_config.profiles[0])
+        self.request = ApiRequest(self.auth)
         self.response = Response(self.request.http_request())
         if self.request.success:
             data_handler = DataHandler(data_file="devices.json")
@@ -33,7 +36,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.Refresh.setGeometry(QtCore.QRect(150, 600, 89, 25))
         self.Refresh.setObjectName("Refresh")
         self.Refresh.setText("Refresh")
-        self.Refresh.clicked.connect(self.refresh_button_pressed)
+        self.Refresh.clicked.connect(self.refresh_data)
 
         self.Export = QtWidgets.QPushButton(self)
         self.Export.setGeometry(QtCore.QRect(20, 600, 121, 25))
@@ -49,9 +52,12 @@ class MainWindow(QtWidgets.QMainWindow):
         self.APIComboBox = QtWidgets.QComboBox(self.APIFrame)
         self.APIComboBox.setGeometry(QtCore.QRect(20, 40, 301, 25))
         self.APIComboBox.setEditable(False)
-        for x in range(self.request.auth.get_num_profiles()):
-            self.APIComboBox.addItem(self.request.auth.profiles[x])
+        logging.debug('Number of profiles to load: ' + str(self.auth_config.get_num_profiles()))
+        for x in range(self.auth_config.get_num_profiles()):
+            self.APIComboBox.addItem(self.auth_config.profiles[x])
+            logging.debug('Adding profile ' + str(self.auth_config.profiles[x]) + ' to combo box')
         self.APIComboBox.setObjectName("APIComboBox")
+
         # Todo add function to sync data to selected api
 
         self.APITitle = QtWidgets.QLabel(self.APIFrame)
@@ -72,14 +78,22 @@ class MainWindow(QtWidgets.QMainWindow):
         self.UninstallCode.setGeometry(QtCore.QRect(10, 40, 121, 23))
         self.UninstallCode.setObjectName("UninstallCode")
 
-    def refresh_button_pressed(self):
-        logging.info('Refresh button pressed')
+    def refresh_data(self):
+        logging.info('Refreshing data')
+        logging.debug('ComboBox Set to index ' + str(self.APIComboBox.currentIndex()))
+        logging.debug('Profile selected: ' + self.APIComboBox.itemText(self.APIComboBox.currentIndex()))
+        self.request = ApiRequest(self.auth_config.load_profile(self.APIComboBox.itemText(self.APIComboBox.currentIndex())))
+        self.response = Response(self.request.http_request())
+
+        # Todo Consider removing the constant data dumping
+        if self.request.success:
+            data_handler = DataHandler(data_file="devices.json")
+            data_handler.file_dump(self.response.content)
         self.DevicesTable.setRowCount(int(self.response.total_results) + 1)
         self.DevicesTable.setColumnCount(1)
         self.DevicesTable.setItem(0, 0, QTableWidgetItem("Name"))
         for x in range(int(self.response.total_results)):
             self.DevicesTable.setItem(x+1, 0, QTableWidgetItem(self.response.all_devices[x].name))
         self.DevicesTable.create()
-
 
     # Todo: need to create all the widgets functions

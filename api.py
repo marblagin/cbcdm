@@ -2,14 +2,15 @@ import configparser
 import os
 import requests
 import logging
+
+from data import DataHandler
 from device import Device
 
 
 class ApiRequest:
 
-    def __init__(self, profile='default'):
-        self.auth_profile = profile
-        self.auth = Auth(self.auth_profile)
+    def __init__(self, auth_profile):
+        self.auth = auth_profile
         self.success = False
         self.api_headers = {'Content-Type': 'application/json', 'X-Auth-Token': self.auth.api_token}
         logging.debug("Header set to " + str(self.api_headers))
@@ -49,12 +50,12 @@ class Response:
         logging.debug("Number of devices found: " + str(self.total_results))
 
         self.all_devices = []
-        counter = 0
 
-        while counter < self.total_results:
+        # Todo list of all devices is capping at 20, need to fix
+        for counter in range(int(self.total_results)):
+            logging.debug('Device counter = ' + str(counter))
             new_device = Device(self.content, counter)
             self.all_devices.append(new_device)
-            counter += 1
 
     def print_devices(self):
         for x in range(len(self.all_devices)):
@@ -67,33 +68,10 @@ class Response:
 
 class Auth:
 
-    def __init__(self, profile, auth_path="config", auth_file="credentials.ini"):
-
-        self.auth_file = auth_file
-        self.auth_path = auth_path
-        self.auth_location = self.auth_path + "/" + self.auth_file
-        config = configparser.ConfigParser()
-
-        if not os.path.exists(self.auth_location):
-            logging.warning("Credential File not found, creating a new one")
-            # Todo need to ask for input to create api token for ini file
-            config['default'] = {
-                'url': 'https://api-prod06.conferdeploy.net',
-                'token': 'AAAAAAAAAAAAA/BBBBB',
-                'org_key': 'CCCCC'
-            }
-            with open(self.auth_location, 'w') as configfile:
-                config.write(configfile)
-
-        config.read(self.auth_location)
-        logging.info("Config file now loaded")
-        self.profiles = config.sections()
-        logging.debug(str(config.sections()) + " profile/s loaded")
+    def __init__(self, config, profile):
         self.api_url = config[profile]['url']
         self.api_token = config[profile]['token']
         self.org_key = config[profile]['org_key']
         self.ssl = config[profile]['ssl_verify']
 
-    def get_num_profiles(self):
-        return len(self.profiles)
-    # Todo need code to return and set profile for API
+
