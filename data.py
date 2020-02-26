@@ -21,7 +21,7 @@ class DataHandler:
 
         logging.info("Data dumped to file")
 
-    def read_data(self):
+    def read_json_data(self):
 
         if os.path.exists(self.data_location):
 

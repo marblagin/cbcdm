@@ -2,7 +2,6 @@ import configparser
 import os
 import requests
 import logging
-
 from data import DataHandler
 from device import Device
 
@@ -46,15 +45,14 @@ class Response:
 
     def __init__(self, response_data):
         self.content = response_data
-        self.total_results = response_data["num_found"]
+        self.total_results = len(response_data["results"])
+        self.num_found = response_data['num_found']
         logging.debug("Number of devices found: " + str(self.total_results))
 
         self.all_devices = []
 
-        # Todo list of all devices is capping at 20, need to fix
         for counter in range(int(self.total_results)):
-            logging.debug('Device counter = ' + str(counter))
-            new_device = Device(self.content, counter)
+            new_device = Device(self.content["results"][counter])
             self.all_devices.append(new_device)
 
     def print_devices(self):

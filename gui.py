@@ -1,12 +1,12 @@
 import logging
 from api import ApiRequest, Response, Auth
-from config import AuthConfig
+from config import AuthConfig, get_sensor_info
 from data import DataHandler
-from PyQt5 import uic, QtWidgets, QtCore, QtGui
+from PyQt5 import uic, QtWidgets, QtCore
 from PyQt5.QtWidgets import QTableWidgetItem
 
 
-class MainWindow(QtWidgets.QMainWindow):
+class MainWindow(QtWidgets.QFrame):
     def __init__(self):
         super(MainWindow, self).__init__()
         uic.loadUi('cbcdm.ui', self)
@@ -26,9 +26,14 @@ class MainWindow(QtWidgets.QMainWindow):
         self.DevicesTable.setToolTipDuration(0)
         self.DevicesTable.setObjectName("DevicesTable")
         self.DevicesTable.setRowCount(int(self.response.total_results) + 1)
-        self.DevicesTable.setColumnCount(1)
-        self.DevicesTable.setItem(0, 0, QTableWidgetItem("Name"))
+
+        # Todo find a way to return a list of all attrs of a calss rather than using a text file
+        sensor_info = get_sensor_info()
+        self.DevicesTable.setColumnCount(sensor_info.__len__())
+        for x in range(sensor_info.__len__()):
+            self.DevicesTable.setItem(0, x, QTableWidgetItem(sensor_info[x]))
         for x in range(int(self.response.total_results)):
+            # Todo find a way to assign each point of device data to the right column
             self.DevicesTable.setItem(x+1, 0, QTableWidgetItem(self.response.all_devices[x].name))
         self.DevicesTable.create()
 

@@ -31,3 +31,14 @@ class AuthConfig:
 
     def get_num_profiles(self):
         return len(self.profiles)
+
+
+def get_sensor_info():
+    f = open('config/sensorinfo.txt', 'r')
+    sensor_info = f.readlines()
+    new_arr = []
+    for x in sensor_info:
+        old = x
+        new = str(old.strip('\n'))
+        new_arr.append(str(new.strip('\"')))
+    return new_arr
