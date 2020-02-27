@@ -1,6 +1,7 @@
 import json
 import os
 import logging
+import pandas
 
 
 class DataHandler:
@@ -21,13 +22,17 @@ class DataHandler:
 
         logging.info("Data dumped to file")
 
-    def read_json_data(self):
+    def read_json_data_results(self):
 
         if os.path.exists(self.data_location):
 
             with open(self.data_location, "r") as file:
-                return json.loads(file.read())
+                data = json.loads(file.read())
+                logging.info("json file loaded")
+                out = data['results']
+                return out
         else:
             logging.error("File not found")
+
 
 # Todo create function to export (filtered) devices to CSV/Text

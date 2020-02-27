@@ -1,9 +1,9 @@
 import logging
 from api import ApiRequest, Response, Auth
-from config import AuthConfig, get_sensor_info
+from config import AuthConfig
 from data import DataHandler
 from PyQt5 import uic, QtWidgets, QtCore
-from PyQt5.QtWidgets import QTableWidgetItem
+from pandas import DataFrame
 
 
 class MainWindow(QtWidgets.QFrame):
@@ -11,30 +11,25 @@ class MainWindow(QtWidgets.QFrame):
         super(MainWindow, self).__init__()
         uic.loadUi('cbcdm.ui', self)
         self.setWindowTitle("CBCDM")
-        self.resize(930, 640)
+        self.resize(1000, 700)
 
+        # Data Request and Load
         self.auth_config = AuthConfig()
         self.auth = Auth(self.auth_config.config, self.auth_config.profiles[0])
         self.request = ApiRequest(self.auth)
         self.response = Response(self.request.http_request())
         if self.request.success:
-            data_handler = DataHandler(data_file="devices.json")
+            data_handler = DataHandler(data_file="devices.json", data_path="data")
             data_handler.file_dump(self.response.content)
+            self.data_frame = DataFrame(data_handler.read_json_data_results())
+            self.results_model = PandasModel(self.data_frame)
 
-        self.DevicesTable = QtWidgets.QTableWidget(self)
+        # Device Table
+        self.DevicesTable = QtWidgets.QTableView(self)
         self.DevicesTable.setGeometry(QtCore.QRect(20, 110, 731, 481))
         self.DevicesTable.setToolTipDuration(0)
         self.DevicesTable.setObjectName("DevicesTable")
-        self.DevicesTable.setRowCount(int(self.response.total_results) + 1)
-
-        # Todo find a way to return a list of all attrs of a calss rather than using a text file
-        sensor_info = get_sensor_info()
-        self.DevicesTable.setColumnCount(sensor_info.__len__())
-        for x in range(sensor_info.__len__()):
-            self.DevicesTable.setItem(0, x, QTableWidgetItem(sensor_info[x]))
-        for x in range(int(self.response.total_results)):
-            # Todo find a way to assign each point of device data to the right column
-            self.DevicesTable.setItem(x+1, 0, QTableWidgetItem(self.response.all_devices[x].name))
+        self.DevicesTable.setModel(self.results_model)
         self.DevicesTable.create()
 
         self.Refresh = QtWidgets.QPushButton(self)
@@ -94,11 +89,35 @@ class MainWindow(QtWidgets.QFrame):
         if self.request.success:
             data_handler = DataHandler(data_file="devices.json")
             data_handler.file_dump(self.response.content)
-        self.DevicesTable.setRowCount(int(self.response.total_results) + 1)
-        self.DevicesTable.setColumnCount(1)
-        self.DevicesTable.setItem(0, 0, QTableWidgetItem("Name"))
-        for x in range(int(self.response.total_results)):
-            self.DevicesTable.setItem(x+1, 0, QTableWidgetItem(self.response.all_devices[x].name))
+            self.data_frame = DataFrame(data_handler.read_json_data_results())
+            self.results_model = PandasModel(self.data_frame)
+        self.DevicesTable.setModel(self.results_model)
         self.DevicesTable.create()
 
     # Todo: need to create all the widgets functions
+
+
+class PandasModel(QtCore.QAbstractTableModel):
+    """
+    Class to populate a table view with a pandas dataframe
+    """
+    def __init__(self, data, parent=None):
+        QtCore.QAbstractTableModel.__init__(self, parent)
+        self._data = data
+
+    def rowCount(self, parent=None):
+        return len(self._data.values)
+
+    def columnCount(self, parent=None):
+        return self._data.columns.size
+
+    def data(self, index, role=QtCore.Qt.DisplayRole):
+        if index.isValid():
+            if role == QtCore.Qt.DisplayRole:
+                return str(self._data.values[index.row()][index.column()])
+        return None
+
+    def headerData(self, col, orientation, role):
+        if orientation == QtCore.Qt.Horizontal and role == QtCore.Qt.DisplayRole:
+            return self._data.columns[col]
+        return None
