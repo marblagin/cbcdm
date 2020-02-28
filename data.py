@@ -3,6 +3,7 @@ import os
 import logging
 from pandas import DataFrame
 
+
 class DataHandler:
 
     def __init__(self, data_path="data", data_file="data_file.json", export_path="export", export_file="api_export"):

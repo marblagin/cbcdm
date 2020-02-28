@@ -34,7 +34,7 @@ class AuthConfig:
 
 
 def get_sensor_info():
-    f = open('config/sensorinfo.txt', 'r')
+    f = open('Not Used/sensorinfo.txt', 'r')
     sensor_info = f.readlines()
     new_arr = []
     for x in sensor_info:
