@@ -1,9 +1,5 @@
-import configparser
-import os
 import requests
 import logging
-from data import DataHandler
-from device import Device
 
 
 class ApiRequest:
@@ -45,23 +41,12 @@ class Response:
 
     def __init__(self, response_data):
         self.content = response_data
-        self.total_results = len(response_data["results"])
+        self.active_results = len(response_data["results"])
+        self.total_results = response_data["num_found"]
         self.num_found = response_data['num_found']
-        logging.debug("Number of devices found: " + str(self.total_results))
-
-        self.all_devices = []
-
-        for counter in range(int(self.total_results)):
-            new_device = Device(self.content["results"][counter])
-            self.all_devices.append(new_device)
-
-    def print_devices(self):
-        for x in range(len(self.all_devices)):
-            print(self.all_devices[x].name)
-            print(self.all_devices[x].uninstall_code)
-
-    def get_text_response(self):
-        return self.content.text
+        self.num_deregistered = self.total_results - self.active_results
+        logging.debug("Number of active devices found: " + str(self.active_results))
+        logging.debug("Number of deregistered machines devices found: " + str(self.num_deregistered))
 
 
 class Auth:

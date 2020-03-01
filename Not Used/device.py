@@ -4,6 +4,7 @@ class Device:
     def __init__(self, device_data):
 
         self.activation_code_expiry_time = device_data['activation_code_expiry_time']
+        self.activation_code = device_data['activation_code']
         self.ad_group_id = device_data['ad_group_id']
         self.av_ave_version = device_data['av_ave_version']
         self.av_engine = device_data['av_engine']
@@ -19,6 +20,7 @@ class Device:
         self.device_meta_data_item_list = device_data['device_meta_data_item_list']
         self.device_owner_id = device_data['device_owner_id']
         self.email = device_data['email']
+        self.encoded_activation_code = device_data['encoded_activation_code']
         self.first_name = device_data['first_name']
         self.id = device_data['id']
         self.last_contact_time = device_data['last_contact_time']
@@ -64,3 +66,7 @@ class Device:
         self.virtual_machine = device_data['virtual_machine']
         self.virtualization_provider = device_data['virtualization_provider']
         self.windows_platform = device_data['windows_platform']
+
+
+    def return_attr(self):
+        return self.__dict__.keys()
