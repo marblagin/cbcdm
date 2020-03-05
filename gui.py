@@ -1,6 +1,9 @@
 import logging
+
+from PyQt5.QtWidgets import QMessageBox
+
 from api import ApiRequest, Response, Auth
-from config import AuthConfig
+from config import AuthConfig, Log
 from data import DataHandler
 from PyQt5 import uic, QtWidgets, QtCore
 from pandas import DataFrame
@@ -59,7 +62,11 @@ class MainWindow(QtWidgets.QFrame):
         QtCore.QMetaObject.connectSlotsByName(self)
 
         # Data Request and Load
+        Log()
         self.auth_config = AuthConfig()
+        if self.auth_config.first_setup:
+            # Todo need to ask for input to create api token for ini file
+            self.auth_config.create_profile("Default", "URL", "Token", "Key", "Org Key")
         self.auth = Auth(self.auth_config.config, self.auth_config.profiles[0])
         self.request = ApiRequest(self.auth)
         self.response = Response(self.request.http_request())
@@ -72,6 +79,15 @@ class MainWindow(QtWidgets.QFrame):
                     self.data_frame_columns.append(col)
                 self.edited_data_frame = self.data_frame
                 self.results_model = PandasModel(self.data_frame)
+        else:
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Warning)
+
+            msg.setText("This is a message box")
+            msg.setInformativeText("This is additional information")
+            msg.setWindowTitle("MessageBox demo")
+            msg.setDetailedText("The details are as follows:")
+            msg.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
 
         # Environment Variables
         self.filtered = False
@@ -120,7 +136,8 @@ class MainWindow(QtWidgets.QFrame):
         logging.info('Refreshing data')
         logging.debug('ComboBox Set to index ' + str(self.APIComboBox.currentIndex()))
         logging.debug('Profile selected: ' + self.APIComboBox.itemText(self.APIComboBox.currentIndex()))
-        self.request = ApiRequest(self.auth_config.load_profile(self.APIComboBox.itemText(self.APIComboBox.currentIndex())))
+        self.request = ApiRequest(
+            self.auth_config.load_profile(self.APIComboBox.itemText(self.APIComboBox.currentIndex())))
         self.response = Response(self.request.http_request())
 
         # Todo Consider removing the constant data dumping
@@ -184,6 +201,7 @@ class PandasModel(QtCore.QAbstractTableModel):
     """
     Class to populate a table view with a pandas dataframe
     """
+
     def __init__(self, data, parent=None):
         QtCore.QAbstractTableModel.__init__(self, parent)
         self._data = data

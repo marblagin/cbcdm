@@ -12,6 +12,7 @@ class ApiRequest:
         # Todo implement ssl verification
         self.api_device_url = self.auth.api_url + "/appservices/v6/orgs/" + self.auth.org_key + "/devices/_search"
         logging.debug("Prod URL set to " + self.api_device_url)
+        self.response_code = ""
 
     def http_request(self, payload=None):
 
@@ -24,8 +25,8 @@ class ApiRequest:
             request_payload = payload
 
         response = requests.request("POST", self.api_device_url, data=request_payload, headers=self.api_headers)
-
         logging.info("HTTP request sent")
+        self.response_code = str(response.status_code)
         if response:
 
             logging.info("HTTP response received")
@@ -34,7 +35,7 @@ class ApiRequest:
 
         else:
 
-            logging.error("HTTP Error in API Request, Status Code: " + str(response.status_code))
+            logging.error("HTTP Error in API Request, Status Code: " + self.response_code)
 
 
 class Response:
