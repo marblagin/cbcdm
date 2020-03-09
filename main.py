@@ -1,12 +1,13 @@
 import sys
 from PyQt5 import QtWidgets
-from gui import MainWindow
+from gui import GUI
+from config import Log
 
 
 def main():
+    Log()
     app = QtWidgets.QApplication(sys.argv)
-    window = MainWindow()
-    window.show()
+    GUI()
     app.exec_()
 
 
