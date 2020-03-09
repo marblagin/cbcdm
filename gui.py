@@ -35,7 +35,7 @@ class PandasModel(QtCore.QAbstractTableModel):
 class Ui_MainWindow(object):
     def __init__(self, MainWindow):
 
-        # uic.loadUi('ui/cbcdmv1.3.ui', MainWindow)
+        uic.loadUi('ui/cbcdmv1.4.ui', MainWindow)
 
         # Initializes UI objects
         MainWindow.setObjectName("MainWindow")
