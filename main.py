@@ -7,8 +7,10 @@ from config import Log
 def main():
     Log()
     app = QtWidgets.QApplication(sys.argv)
-    MainWindow = Ui_MainWindow()
-    MainWindow.show()
+    window = Ui_MainWindow()
+    window.show()
+    if window.auth_config.first_setup:
+        window.api_info_dialog.show()
     app.exec_()
 
 

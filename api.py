@@ -6,13 +6,14 @@ class ApiRequest:
 
     def __init__(self, auth_profile):
         self.auth = auth_profile
-        self.success = False
         self.api_headers = {'Content-Type': 'application/json', 'X-Auth-Token': self.auth.api_token}
         logging.debug("Header set to " + str(self.api_headers))
         # Todo implement ssl verification
         self.api_device_url = self.auth.api_url + "/appservices/v6/orgs/" + self.auth.org_key + "/devices/_search"
         logging.debug("Prod URL set to " + self.api_device_url)
         self.response_code = ""
+        self.json_response = Response
+        self.success = False
 
     def http_request(self, payload=None):
 
@@ -28,14 +29,13 @@ class ApiRequest:
         logging.info("HTTP request sent")
         self.response_code = str(response.status_code)
         if response:
-
             logging.info("HTTP response received")
+            self.json_response = response.json()
             self.success = True
-            return response.json()
-
+            return True
         else:
-
             logging.error("HTTP Error in API Request, Status Code: " + self.response_code)
+            return False
 
 
 class Response:
@@ -57,5 +57,3 @@ class Auth:
         self.api_token = config[profile]['token']
         self.org_key = config[profile]['org_key']
         self.ssl = config[profile]['ssl_verify']
-
-

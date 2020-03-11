@@ -92,13 +92,24 @@ class Ui_MainWindow(QtWidgets.QMainWindow):
         # Data Request and Load
         self.auth_config = AuthConfig()
         if self.auth_config.first_setup:
-            # Todo need to ask for input to create api token for ini file
-            self.auth_config.create_profile("Default", "URL", "Token", "Key", "Org Key")
+            self.api_info_dialog.show()
+            self.auth_config.create_profile(self.api_info_dialog.CredLine.text(), self.api_info_dialog.APICombo.itemText(0),
+                                            self.api_info_dialog.TokenLine.text(), self.api_info_dialog.KeyLine.text(),
+                                            self.api_info_dialog.OrgLine.text(), "True")
+        self.auth_config.load_config()
+        logging.debug('Number of profiles to load: ' + str(self.auth_config.get_num_profiles()))
+        self.add_api_config()
+
         self.auth = Auth(self.auth_config.config, self.auth_config.profiles[0])
+        self.data_handler = DataHandler(data_file="devices.json", data_path="data")
+
+        # Environment Variables
+        self.filtered = False
+
         self.request = ApiRequest(self.auth)
-        self.response = Response(self.request.http_request())
+        self.request.http_request()
         if self.request.success:
-            self.data_handler = DataHandler(data_file="devices.json", data_path="data")
+            self.response = Response(self.request.json_response)
             if self.data_handler.file_dump(self.response.content):
                 self.data_frame = DataFrame(self.data_handler.read_json_data_results())
                 self.data_frame_columns = []
@@ -106,25 +117,11 @@ class Ui_MainWindow(QtWidgets.QMainWindow):
                     self.data_frame_columns.append(col)
                 self.edited_data_frame = self.data_frame
                 self.results_model = PandasModel(self.data_frame)
-        else:
-            msg = QMessageBox()
-            msg.setIcon(QMessageBox.Warning)
+            self.refresh_elements()
+            self.set_up_items()
 
-            msg.setText("This is a message box")
-            msg.setInformativeText("This is additional information")
-            msg.setWindowTitle("MessageBox demo")
-            msg.setDetailedText("The details are as follows:")
-            msg.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
-
-        # Environment Variables
-        self.filtered = False
-
-        # Assign data to UI elements
-        self.retranslateUi(self)
-        self.refresh_elements()
-        logging.debug('Number of profiles to load: ' + str(self.auth_config.get_num_profiles()))
-        self.add_api_config()
         self.bind_buttons()
+        self.retranslateUi(self)
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
@@ -137,9 +134,10 @@ class Ui_MainWindow(QtWidgets.QMainWindow):
         self.APITitle.setText(_translate("MainWindow", "Select API:"))
         self.AddAPI.setText(_translate("MainWindow", "Add API"))
 
-        self.set_up_items()
-
     def set_up_items(self):
+        self.ColumnList = QtWidgets.QListWidget(self.centralwidget)
+        self.ColumnList.setGeometry(QtCore.QRect(1010, 140, 256, 661))
+        self.ColumnList.setObjectName("ColumnList")
         __sortingEnabled = self.ColumnList.isSortingEnabled()
         self.ColumnList.setSortingEnabled(False)
         counter = 0
@@ -171,10 +169,11 @@ class Ui_MainWindow(QtWidgets.QMainWindow):
         logging.debug('Profile selected: ' + self.APIComboBox.itemText(self.APIComboBox.currentIndex()))
         self.request = ApiRequest(
             self.auth_config.load_profile(self.APIComboBox.itemText(self.APIComboBox.currentIndex())))
-        self.response = Response(self.request.http_request())
 
         # Todo Consider removing the constant data dumping
+        self.request.http_request()
         if self.request.success:
+            self.response = Response(self.request.json_response)
             if self.data_handler.file_dump(self.response.content):
                 self.data_frame = DataFrame(self.data_handler.read_json_data_results())
                 self.data_frame_columns = []
@@ -182,6 +181,10 @@ class Ui_MainWindow(QtWidgets.QMainWindow):
                     self.data_frame_columns.append(col)
                 self.edited_data_frame = self.data_frame
             self.refresh_elements()
+            self.set_up_items()
+        else:
+            QMessageBox.about(self, "Failed Request", "Failed to Pull Data from API, Error code:"
+                              + str(self.request.response_code))
 
     def refresh_elements(self):
         for x in range(self.ColumnList.__len__()):
@@ -280,6 +283,9 @@ class Ui_APIDialog(QtWidgets.QDialog):
         self.DialogButton.rejected.connect(self.reject)
         QtCore.QMetaObject.connectSlotsByName(self)
 
+        self.APICombo.addItem("https://defense-eu.conferdeploy.net")
+        self.APICombo.addItem("https://defense-prod05.conferdeploy.net")
+
         # API Values
         self.cred = ""
         self.token = ""
@@ -297,15 +303,15 @@ class Ui_APIDialog(QtWidgets.QDialog):
         self.KeyLabel.setText(_translate("APIDialog", "API Key:"))
 
     def parse_api(self):
-        logging.info("Gathering info from entered API details")
+        logging.debug("Gathering info from entered API details")
         # Todo Flesh out the input validation here
         self.cred = self.CredLine.text()
         self.token = self.TokenLine.text()
         self.url = self.APICombo.itemText(self.APICombo.currentIndex())
         self.org = self.OrgLine.text()
         self.key = self.KeyLine.text()
+        self.close()
 
 
 # Todo add option to save filtered view
-# Todo add header to table showing all devices
 # Todo figure out why some machines are not appearing in the results (linux machines for instance)
