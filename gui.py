@@ -88,6 +88,7 @@ class Ui_MainWindow(QtWidgets.QMainWindow):
 
         # Initialise other frames
         self.api_info_dialog = Ui_APIDialog()
+        self.api_info_dialog.DialogButton.accepted.connect(self.write_new_api)
 
         # Data Request and Load
         self.auth_config = AuthConfig()
@@ -152,9 +153,28 @@ class Ui_MainWindow(QtWidgets.QMainWindow):
         self.ColumnList.sortItems(QtCore.Qt.AscendingOrder)
 
     def add_api_config(self):
+        self.auth_config.load_config()
         for x in range(self.auth_config.get_num_profiles()):
             self.APIComboBox.addItem(self.auth_config.profiles[x])
             logging.debug('Adding profile ' + str(self.auth_config.profiles[x]) + ' to combo box')
+
+    def write_new_api(self):
+        logging.debug("Writing new API to config file")
+        self.auth_config.create_profile(self.api_info_dialog.CredLine.text(), self.api_info_dialog.APICombo.itemText(0),
+                                        self.api_info_dialog.TokenLine.text(), self.api_info_dialog.KeyLine.text(),
+                                        self.api_info_dialog.OrgLine.text(), "True")
+        logging.debug("Adding APIs to combo box")
+        self.reset_combobox()
+        self.add_api_config()
+        # Todo fix the new api not showing when added
+
+    def reset_combobox(self):
+        self.APIComboBox = QtWidgets.QComboBox(self.APIFrame)
+        self.APIComboBox.setGeometry(QtCore.QRect(20, 40, 301, 25))
+        self.APIComboBox.setEditable(False)
+        self.APIComboBox.setProperty("currentText", "")
+        self.APIComboBox.setObjectName("APIComboBox")
+        logging.debug("API Combo box reset")
 
     def bind_buttons(self):
         self.Refresh.clicked.connect(self.refresh_data)
