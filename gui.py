@@ -117,7 +117,7 @@ class Ui_MainWindow(QtWidgets.QMainWindow):
                     self.data_frame_columns.append(col)
                 self.edited_data_frame = self.data_frame
                 self.results_model = PandasModel(self.data_frame)
-            self.refresh_elements()
+            self.refresh_table()
             self.set_up_items()
 
         self.bind_buttons()
@@ -126,7 +126,7 @@ class Ui_MainWindow(QtWidgets.QMainWindow):
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
-        self.NumFoundLabel.setText(_translate("MainWindow", "Number of Results:"))
+        self.NumFoundLabel.setText(_translate("MainWindow", "Number of Results:  " + str(self.response.active_results)))
         self.Refresh.setText(_translate("MainWindow", "Refresh"))
         self.SelectAll.setText(_translate("MainWindow", "Select All"))
         self.DeselectAll.setText(_translate("MainWindow", "Deselect All"))
@@ -162,6 +162,7 @@ class Ui_MainWindow(QtWidgets.QMainWindow):
         self.SelectAll.clicked.connect(self.select_all)
         self.DeselectAll.clicked.connect(self.deselect_all)
         self.AddAPI.clicked.connect(self.add_api)
+        self.APIComboBox.currentIndexChanged.connect(self.refresh_data)
 
     def refresh_data(self):
         logging.info('Refreshing data')
@@ -180,13 +181,13 @@ class Ui_MainWindow(QtWidgets.QMainWindow):
                 for col in self.data_frame.columns:
                     self.data_frame_columns.append(col)
                 self.edited_data_frame = self.data_frame
-            self.refresh_elements()
+            self.refresh_table()
             self.set_up_items()
         else:
             QMessageBox.about(self, "Failed Request", "Failed to Pull Data from API, Error code:"
                               + str(self.request.response_code))
 
-    def refresh_elements(self):
+    def refresh_table(self):
         for x in range(self.ColumnList.__len__()):
             if not self.ColumnList.item(x).checkState():
                 logging.info("Data is now filtered")
