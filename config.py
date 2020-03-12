@@ -9,24 +9,27 @@ class AuthConfig:
     def __init__(self, auth_path="config", auth_file="credentials.ini"):
         self.auth_location = auth_path + "/" + auth_file
         self.config = configparser.ConfigParser()
+        self.profiles = []
         self.first_setup = False
 
         if not os.path.exists(self.auth_location):
             logging.warning("Credential File not found, first time setup")
             self.first_setup = True
 
+    def load_config(self):
         self.config.read(self.auth_location)
         logging.info("Config file now loaded")
         self.profiles = self.config.sections()
         logging.debug(str(self.config.sections()) + " profile/s loaded")
 
-    def create_profile(self, profile_name, url, token, key, org_key):
+    def create_profile(self, profile_name, url, token, key, org_key, ssl):
         logging.info("Creating credential profile")
         token_key = str(token) + '/' + str(key)
         self.config[profile_name] = {
             'url': url,
             'token': token_key,
-            'org_key': org_key
+            'org_key': org_key,
+            'ssl_verify': ssl
         }
         with open(self.auth_location, 'w') as configfile:
             self.config.write(configfile)
