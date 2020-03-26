@@ -40,7 +40,7 @@ class Ui_MainWindow(QtWidgets.QMainWindow):
         uic.loadUi('ui/cbcdmv1.4.ui', self)
 
         # Initializes UI objects
-        self.setObjectName("MainWindow")
+        self.setObjectName("CBCDM")
         self.resize(1280, 834)
         self.centralwidget = QtWidgets.QWidget(self)
         self.centralwidget.setObjectName("centralwidget")
@@ -97,9 +97,8 @@ class Ui_MainWindow(QtWidgets.QMainWindow):
             self.auth_config.create_profile(self.api_info_dialog.CredLine.text(), self.api_info_dialog.APICombo.itemText(0),
                                             self.api_info_dialog.TokenLine.text(), self.api_info_dialog.KeyLine.text(),
                                             self.api_info_dialog.OrgLine.text(), "True")
-        self.auth_config.load_config()
-        logging.debug('Number of profiles to load: ' + str(self.auth_config.get_num_profiles()))
         self.add_api_config()
+        logging.debug('Number of profiles to load: ' + str(self.auth_config.get_num_profiles()))
 
         self.auth = Auth(self.auth_config.config, self.auth_config.profiles[0])
         self.data_handler = DataHandler(data_file="devices.json", data_path="data")
@@ -157,23 +156,28 @@ class Ui_MainWindow(QtWidgets.QMainWindow):
         for x in range(self.auth_config.get_num_profiles()):
             self.APIComboBox.addItem(self.auth_config.profiles[x])
             logging.debug('Adding profile ' + str(self.auth_config.profiles[x]) + ' to combo box')
+        logging.debug("Number of APIs to display: " + str(self.APIComboBox.count()))
+        self.APIComboBox.show()
 
     def write_new_api(self):
         logging.debug("Writing new API to config file")
-        self.auth_config.create_profile(self.api_info_dialog.CredLine.text(), self.api_info_dialog.APICombo.itemText(0),
+        self.auth_config.create_profile(self.api_info_dialog.CredLine.text(),
+                                        self.api_info_dialog.APICombo.itemText(
+                                            self.api_info_dialog.APICombo.currentIndex()),
                                         self.api_info_dialog.TokenLine.text(), self.api_info_dialog.KeyLine.text(),
                                         self.api_info_dialog.OrgLine.text(), "True")
         logging.debug("Adding APIs to combo box")
         self.reset_combobox()
         self.add_api_config()
-        # Todo fix the new api not showing when added
 
     def reset_combobox(self):
+        self.APIComboBox.close()
         self.APIComboBox = QtWidgets.QComboBox(self.APIFrame)
         self.APIComboBox.setGeometry(QtCore.QRect(20, 40, 301, 25))
         self.APIComboBox.setEditable(False)
         self.APIComboBox.setProperty("currentText", "")
         self.APIComboBox.setObjectName("APIComboBox")
+        self.APIComboBox.currentIndexChanged.connect(self.refresh_data)
         logging.debug("API Combo box reset")
 
     def bind_buttons(self):
@@ -183,6 +187,7 @@ class Ui_MainWindow(QtWidgets.QMainWindow):
         self.DeselectAll.clicked.connect(self.deselect_all)
         self.AddAPI.clicked.connect(self.add_api)
         self.APIComboBox.currentIndexChanged.connect(self.refresh_data)
+        logging.debug("Functions bound to buttons")
 
     def refresh_data(self):
         logging.info('Refreshing data')
@@ -202,7 +207,6 @@ class Ui_MainWindow(QtWidgets.QMainWindow):
                     self.data_frame_columns.append(col)
                 self.edited_data_frame = self.data_frame
             self.refresh_table()
-            self.set_up_items()
         else:
             QMessageBox.about(self, "Failed Request", "Failed to Pull Data from API, Error code:"
                               + str(self.request.response_code))
@@ -228,6 +232,7 @@ class Ui_MainWindow(QtWidgets.QMainWindow):
         self.NumFoundLabel.setText("Number of Results:  " + str(self.response.active_results))
 
     def filter_data(self, data_frame):
+        logging.debug("Filtering Data")
         for x in range(self.ColumnList.__len__()):
             if not self.ColumnList.item(x).checkState():
                 try:
@@ -333,6 +338,6 @@ class Ui_APIDialog(QtWidgets.QDialog):
         self.key = self.KeyLine.text()
         self.close()
 
-
+# Todo Fix tab for API dialog
 # Todo add option to save filtered view
 # Todo figure out why some machines are not appearing in the results (linux machines for instance)
