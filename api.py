@@ -19,7 +19,9 @@ class ApiRequest:
 
         if payload is None:
 
-            request_payload = "{\n    \"criteria\": {\n        \"status\": [\n            \"ALL\"\n        ]\n    }\n}"
+            # request_payload = "{\n\"criteria\": {\n\"status\": [\n\"ALL\"\n]\n}\n}"
+            # request_payload = "{\n\"criteria\": \"ALL\"\n}"
+            request_payload = "{}"
 
         else:
 
