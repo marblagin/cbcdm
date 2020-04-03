@@ -57,6 +57,10 @@ class Ui_MainWindow(QtWidgets.QMainWindow):
         self.ColumnList = QtWidgets.QListWidget(self.centralwidget)
         self.ColumnList.setGeometry(QtCore.QRect(1010, 140, 256, 661))
         self.ColumnList.setObjectName("ColumnList")
+        __sortingEnabled = self.ColumnList.isSortingEnabled()
+        self.ColumnList.setSortingEnabled(False)
+        self.ColumnList.setSortingEnabled(__sortingEnabled)
+        self.ColumnList.sortItems(QtCore.Qt.AscendingOrder)
         self.SelectAll = QtWidgets.QPushButton(self.centralwidget)
         self.SelectAll.setGeometry(QtCore.QRect(1010, 110, 131, 27))
         self.SelectAll.setObjectName("SelectAll")
@@ -135,21 +139,12 @@ class Ui_MainWindow(QtWidgets.QMainWindow):
         self.AddAPI.setText(_translate("MainWindow", "Add API"))
 
     def set_up_items(self):
-        self.ColumnList = QtWidgets.QListWidget(self.centralwidget)
-        self.ColumnList.setGeometry(QtCore.QRect(1010, 140, 256, 661))
-        self.ColumnList.setObjectName("ColumnList")
-        __sortingEnabled = self.ColumnList.isSortingEnabled()
-        self.ColumnList.setSortingEnabled(False)
-        counter = 0
-        for x in self.data_frame_columns:
+        for x in self.data_frame:
             item = QtWidgets.QListWidgetItem()
             item.setFlags(QtCore.Qt.ItemIsSelectable | QtCore.Qt.ItemIsUserCheckable | QtCore.Qt.ItemIsEnabled)
             item.setCheckState(QtCore.Qt.Checked)
             item.setText(str(x))
             self.ColumnList.addItem(item)
-            counter += 1
-        self.ColumnList.setSortingEnabled(__sortingEnabled)
-        self.ColumnList.sortItems(QtCore.Qt.AscendingOrder)
 
     def add_api_config(self):
         self.auth_config.load_config()
